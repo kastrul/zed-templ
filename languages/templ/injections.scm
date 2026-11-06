@@ -28,3 +28,11 @@
       (interpreted_string_literal)
     ] @injection.content
     (#set! injection.language "regex")))
+
+; Alpine attribute values as JavaScript.
+((attribute
+  name: (attribute_name) @_name
+  value: (quoted_attribute_value
+    (attribute_value) @injection.content))
+  (#match? @_name "^(x-(data|init|show|bind|on|text|html|model|modelable|effect|if|id)([:.]|$)|@|:)")
+  (#set! injection.language "javascript"))
