@@ -126,6 +126,32 @@ Resolution is a text search, not type analysis, so some cases are not resolved:
 
 The scan covers `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, and `.cts` files. It skips hidden directories, `node_modules`, `dist`, `build`, `vendor`, `target`, `coverage`, `.d.ts` and `.min.js` files, files over 2 MB, and bundled output.
 
+### Go to Definition from Go Files
+By default, go to definition from a `.go` file to a templ component opens the generated `_templ.go` file, because Zed asks `gopls`, and `gopls` only knows the generated code.
+
+To open the `.templ` source instead, run `gopls` through the proxy that this extension installs. Open a `.templ` file once so the extension writes the proxy, then add this to your Zed settings:
+
+```json
+{
+  "lsp": {
+    "gopls": {
+      "binary": {
+        "path": "/Users/YOU/Library/Application Support/Zed/extensions/work/templ/gopls-templ-proxy.js"
+      }
+    }
+  }
+}
+```
+
+On Linux, the path is `~/.local/share/zed/extensions/work/templ/gopls-templ-proxy.js`, written as an absolute path. Then restart `gopls`, or restart Zed.
+
+The proxy needs `node` and `gopls` on your `PATH`. It also checks `$GOBIN`, `$GOPATH/bin`, and `~/go/bin` for `gopls`. To use a specific `gopls`, set `TEMPL_GOPLS_PATH` in `lsp.gopls.binary.env`.
+
+All other `gopls` messages pass through unchanged. The proxy rewrites results of go to definition, declaration, type definition, and implementation:
+- It resolves top-level `templ`, `css`, `script`, `func`, `type`, `var`, and `const` declarations, plus members of `type`, `var`, and `const` blocks.
+- Resolution is a text search by name in the source file. If two receivers declare the same method name in one file, it opens the first.
+- Find references still lists `_templ.go` locations.
+
 ### Prettier Formatting
 To use Prettier with Templ files:
 

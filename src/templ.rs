@@ -5,12 +5,22 @@ use zed_extension_api::{self as zed, LanguageServerId, Result};
 const ALPINE_SERVER_ID: &str = "alpine";
 const ALPINE_SERVER_PATH: &str = "alpine-language-server.js";
 const ALPINE_SERVER_SOURCE: &str = include_str!("alpine-language-server.js");
+const GOPLS_PROXY_PATH: &str = "gopls-templ-proxy.js";
+const GOPLS_PROXY_SOURCE: &str = include_str!("gopls-templ-proxy.js");
 
 struct TemplExtension {
     cached_binary_path: Option<String>,
 }
 
 impl TemplExtension {
+    /// Writes the optional gopls proxy for users to reference from `lsp.gopls.binary.path`.
+    /// Zed starts it directly, so it must be executable.
+    fn write_gopls_proxy(&self) -> Result<()> {
+        fs::write(GOPLS_PROXY_PATH, GOPLS_PROXY_SOURCE)
+            .map_err(|e| format!("failed to write {GOPLS_PROXY_PATH}: {e}"))?;
+        zed::make_file_executable(GOPLS_PROXY_PATH)
+    }
+
     /// Writes the embedded server on every start, so it always matches this build
     /// and survives the templ download's cleanup of the working directory.
     fn alpine_server_command(&self) -> Result<zed::Command> {
@@ -126,8 +136,12 @@ impl zed::Extension for TemplExtension {
             return self.alpine_server_command();
         }
 
+        // Resolve the binary first, because its download cleans the working directory.
+        let command = self.language_server_binary_path(language_server_id, worktree)?;
+        self.write_gopls_proxy()?;
+
         Ok(zed::Command {
-            command: self.language_server_binary_path(language_server_id, worktree)?,
+            command,
             // Pass the log argument to the language server to debug it
             // args: vec![
             //     "lsp".to_string(),

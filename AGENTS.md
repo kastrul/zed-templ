@@ -43,6 +43,7 @@ If parser behavior looks wrong, inspect `grammars/templ/grammar.js` before chang
 
 - `gopls` is an external prerequisite for the templ language server to work correctly.
 - `src/alpine-language-server.js` answers go to definition from Alpine attribute values to `Alpine.data(...)` registrations. It is embedded in the extension and runs on Zed's Node, so it must stay dependency-free. Test it with `node --test tests/`.
+- `src/gopls-templ-proxy.js` is an opt-in wrapper around `gopls` for Go files, set through `lsp.gopls.binary.path`. It rewrites navigation results from `_templ.go` to `.templ`. Do not register it or `templ lsp` as a server for the Go language: Zed merges definition results, so an extra server gives a list and not a jump, and it starts for every Go project. `templ lsp` also cannot replace `gopls`, because it returns no completions or code actions for Go files. The proxy is embedded in the extension, must stay dependency-free, and has the same test command.
 
 ## Workflows
 
