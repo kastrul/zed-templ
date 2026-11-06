@@ -16,6 +16,8 @@ Recommended order:
 - `04-raw-go-blocks.templ`: check whether `{{` stays intact while typing and after save.
 - `05-formatting-blank-lines.templ`: save the file and check whether blank lines are preserved.
 - `06-embedded-languages.templ`: verify embedded CSS, JavaScript, and class expressions still highlight correctly.
+- `07-for-loop-with-dynamic-attrs.templ`: verify highlighting stays correct after dynamic attribute key expressions inside a `for` loop.
+- `08-emmet-scope-check.templ`: verify Emmet expands in markup and does not feel like the primary tool inside `<script>` and `<style>`.
 
 Current issue mapping:
 

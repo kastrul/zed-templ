@@ -2,3 +2,5 @@ grammars/
 extension.wasm
 Cargo.lock
 target/
+.claude/settings.local.json
+.claude/worktrees/
