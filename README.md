@@ -10,6 +10,7 @@ A comprehensive language extension for [Templ](https://github.com/a-h/templ) in 
 - 📝 **HTML/CSS/JavaScript** support within templates
 - 🚀 **Emmet** abbreviations (requires configuration)
 - 🔍 **Go code** support with gopls integration
+- 🏔️ **Alpine.js** attribute highlighting and go to definition
 
 ## 📋 Prerequisites
 
@@ -57,6 +58,7 @@ To enable Tailwind CSS class autocomplete in Templ files, add this to your Zed s
     "Templ": {
       "language_servers": [
         "templ",
+        "alpine",
         "tailwindcss-language-server",
         "vscode-html-language-server",
         "emmet-language-server"
@@ -87,6 +89,42 @@ If Emmet does not expand in `.templ` files:
 1. Ensure the `emmet` extension is installed in Zed
 2. Keep `emmet-language-server` in `languages.Templ.language_servers`
 3. Restart Zed after changing language server settings
+
+### Alpine.js Support
+Alpine support works without configuration. If you set `languages.Templ.language_servers`, keep `"alpine"` in the list, because Zed disables servers that the list leaves out.
+
+**Highlighting**: Quoted values of Alpine attributes are highlighted as JavaScript. This covers `x-data`, `x-init`, `x-show`, `x-bind`, `x-on`, `x-text`, `x-html`, `x-model`, `x-modelable`, `x-effect`, `x-if`, `x-id`, and the `@` and `:` shorthands. Values of `x-for`, `x-ref`, `x-transition`, `x-teleport`, and `x-cloak` are not highlighted, because they are not plain JavaScript.
+
+**Go to definition**: The bundled `alpine` language server links markup to `Alpine.data(...)` registrations in your workspace's scripts:
+
+```templ
+templ Counter(start string) {
+    <div x-data={ "counter(" + start + ")" }>
+        <button @click="increment">+</button>
+        <span x-text="count"></span>
+    </div>
+}
+```
+
+```ts
+Alpine.data("counter", (start) => ({
+  count: Number(start),
+  increment() {
+    this.count++;
+  },
+}));
+```
+
+- From a component name in `x-data`, it jumps to the `Alpine.data(...)` call. The name can be in a quoted value or at the start of a string in a Go expression.
+- From a member name in an Alpine attribute, it jumps to the property or method in the object the factory returns. Components in scope are searched innermost first.
+
+Resolution is a text search, not type analysis, so some cases are not resolved:
+- Components must be registered with a string literal name, as in `Alpine.data("name", ...)`.
+- Factories must return an object literal.
+- Members are only resolved in quoted attribute values, not in Go expressions.
+- Property access is only resolved for `this.member`. In `row.key`, `key` is not resolved.
+
+The scan covers `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.mts`, and `.cts` files. It skips hidden directories, `node_modules`, `dist`, `build`, `vendor`, `target`, `coverage`, `.d.ts` and `.min.js` files, files over 2 MB, and bundled output.
 
 ### Prettier Formatting
 To use Prettier with Templ files:
