@@ -1,12 +1,31 @@
-use std::fs;
+use std::{env, fs};
 use zed::settings::LspSettings;
 use zed_extension_api::{self as zed, LanguageServerId, Result};
+
+const ALPINE_SERVER_ID: &str = "alpine";
+const ALPINE_SERVER_PATH: &str = "alpine-language-server.js";
+const ALPINE_SERVER_SOURCE: &str = include_str!("alpine-language-server.js");
 
 struct TemplExtension {
     cached_binary_path: Option<String>,
 }
 
 impl TemplExtension {
+    /// Writes the embedded server on every start, so it always matches this build
+    /// and survives the templ download's cleanup of the working directory.
+    fn alpine_server_command(&self) -> Result<zed::Command> {
+        fs::write(ALPINE_SERVER_PATH, ALPINE_SERVER_SOURCE)
+            .map_err(|e| format!("failed to write {ALPINE_SERVER_PATH}: {e}"))?;
+        let server_path = env::current_dir()
+            .map_err(|e| format!("failed to read working directory: {e}"))?
+            .join(ALPINE_SERVER_PATH);
+        Ok(zed::Command {
+            command: zed::node_binary_path()?,
+            args: vec![server_path.to_string_lossy().into_owned()],
+            env: Default::default(),
+        })
+    }
+
     fn language_server_binary_path(
         &mut self,
         language_server_id: &LanguageServerId,
@@ -103,6 +122,10 @@ impl zed::Extension for TemplExtension {
         language_server_id: &LanguageServerId,
         worktree: &zed::Worktree,
     ) -> Result<zed::Command> {
+        if language_server_id.as_ref() == ALPINE_SERVER_ID {
+            return self.alpine_server_command();
+        }
+
         Ok(zed::Command {
             command: self.language_server_binary_path(language_server_id, worktree)?,
             // Pass the log argument to the language server to debug it

@@ -13,6 +13,13 @@ language = "Templ"
 [language_servers.templ.language_ids]
 "Templ" = "templ"
 
+[language_servers.alpine]
+name = "Alpine Language Server"
+language = "Templ"
+
+[language_servers.alpine.language_ids]
+"Templ" = "templ"
+
 [grammars.templ]
 repository = "https://github.com/vrischmann/tree-sitter-templ"
 commit = "68d6707ed20159ae7525241b8161c126dc1c620c"

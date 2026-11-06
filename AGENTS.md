@@ -133,6 +133,7 @@ Good manual verification targets:
 - Cached binaries are versioned and older cached versions are cleaned up.
 - The extension also supports workspace configuration for additional language servers such as Tailwind CSS, HTML, and Emmet.
 - `gopls` is an external prerequisite for the templ language server to work correctly.
+- `src/alpine-language-server.js` answers go to definition from Alpine attribute values to `Alpine.data(...)` registrations. It is embedded in the extension and runs on Zed's Node, so it must stay dependency-free. Test it with `node --test tests/`.
 
 ## Editing Guidance
 
