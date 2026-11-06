@@ -26,7 +26,7 @@ The query layout in `languages/templ/` is intentionally consolidated. Go-shaped 
 
 ## Grammar
 
-`grammars/` is gitignored, except for the tracked `grammars/templ.toml`. `grammars/templ/` is a local clone of upstream `tree-sitter-templ` at the pinned commit, so edits there do not ship with this repository, and a new checkout or worktree does not have the clone. A grammar fix needs an upstream commit and a new pin, set in both `extension.toml` and `grammars/templ.toml`.
+`grammars/` is gitignored. `grammars/templ/` is a local clone of upstream `tree-sitter-templ` at the pinned commit, so edits there do not ship with this repository, and a new checkout or worktree does not have the clone. A grammar fix needs an upstream commit and a new pin, set in `extension.toml`.
 
 The templ grammar inherits from Go and exposes many Go nodes directly in the templ parse tree. Declarations, call expressions, selectors, literals, `if`, `for`, `switch`, `range`, and raw Go blocks often appear as normal Go AST nodes inside `.templ` files.
 

@@ -31,6 +31,9 @@ const MAX_SCRIPT_BYTES = 2 * 1024 * 1024;
 // Lines longer than this are bundler output, a copy of the real source.
 const MAX_SOURCE_LINE_LENGTH = 2000;
 const IDENTIFIER_CHAR = /[\w$]/;
+const SCAN_REUSE_MS = 2000;
+
+let lastScan = null;
 
 // ---------------------------------------------------------------------------
 // Templ markup
@@ -87,14 +90,16 @@ function parseTag(text, start) {
         continue;
       }
       i += match[0].length;
-      if (GO_KEYWORD_LINES.has(match[0])) {
-        const lineEnd = text.indexOf("\n", i);
-        i = lineEnd < 0 ? text.length : lineEnd;
-        continue;
-      }
       let j = i;
       while (/\s/.test(text[j] ?? "")) j++;
-      if (text[j] !== "=") continue;
+      if (text[j] !== "=") {
+        // A Go statement in the tag. With `=`, the same word is an attribute, as in `for="id"`.
+        if (GO_KEYWORD_LINES.has(match[0])) {
+          const lineEnd = text.indexOf("\n", i);
+          i = lineEnd < 0 ? text.length : lineEnd;
+        }
+        continue;
+      }
       j++;
       while (/\s/.test(text[j] ?? "")) j++;
       if (text[j] === '"' || text[j] === "'") {
@@ -137,16 +142,30 @@ function componentReference(text, attribute) {
   return { name: match[2], start: attribute.valueStart + match[1].length };
 }
 
+// Returns the offset of the next `templ` declaration at or after `start`.
+function nextTemplDeclaration(text, start) {
+  const declaration = /^templ\b/gm;
+  declaration.lastIndex = start;
+  const match = declaration.exec(text);
+  return match ? match.index : text.length;
+}
+
 // Finds the attribute value at `offset` and the Alpine components in scope,
 // innermost first. Returns null when the offset is not in an attribute value.
+//
+// shortcut: a `}` in column 0 ends the component, as templ fmt writes it. Unformatted
+// markup with such a line loses the rest of its component. Track brace depth if that occurs.
 function attributeContext(text, offset) {
   const open = [];
-  let i = 0;
+  // Other top-level code is Go, CSS or JavaScript, where `<` does not open a tag.
+  let i = nextTemplDeclaration(text, 0);
 
   while (i <= offset && i < text.length) {
     const atLineStart =
       text[i] === "/" && text.slice(text.lastIndexOf("\n", i - 1) + 1, i).trim() === "";
-    if (atLineStart && text.startsWith("//", i)) {
+    if (text[i] === "}" && text[i - 1] === "\n") {
+      i = nextTemplDeclaration(text, i);
+    } else if (atLineStart && text.startsWith("//", i)) {
       const end = text.indexOf("\n", i);
       i = end < 0 ? text.length : end;
     } else if (atLineStart && text.startsWith("/*", i)) {
@@ -389,9 +408,12 @@ function isBundledLine(text, offset) {
   return (end < 0 ? text.length : end) - start > MAX_SOURCE_LINE_LENGTH;
 }
 
-// Scans on every request. It keeps results current without a file watcher, and
-// a project's script files are few once dependencies and build output are skipped.
+// Scans again after SCAN_REUSE_MS. It keeps results current without a file watcher, and
+// the window stops repeated requests, as from cmd-hover, from each walking the workspace.
 function findComponents(roots) {
+  if (lastScan?.roots === roots && Date.now() - lastScan.time < SCAN_REUSE_MS) {
+    return lastScan.components;
+  }
   const components = [];
   for (const root of roots) {
     for (const file of scriptFiles(root)) {
@@ -416,6 +438,7 @@ function findComponents(roots) {
       }
     }
   }
+  lastScan = { roots, time: Date.now(), components };
   return components;
 }
 
@@ -592,4 +615,4 @@ function start() {
 
 if (require.main === module) start();
 
-module.exports = { attributeContext, definition, factoryObjectStart, objectMembers };
+module.exports = { attributeContext, definition, factoryObjectStart, findComponents, objectMembers };

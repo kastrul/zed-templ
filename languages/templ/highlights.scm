@@ -40,6 +40,9 @@
 
 (package_identifier) @module @type
 
+; Zed uses the last match for a node, so this stays above the specific identifier rules.
+(identifier) @variable
+
 (parameter_declaration
   name: (identifier) @variable.parameter)
 
@@ -57,8 +60,6 @@
   .
   (literal_element
     (identifier) @variable.member @property))
-
-(identifier) @variable
 
 (function_declaration
   name: (identifier) @function)

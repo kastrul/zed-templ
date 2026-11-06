@@ -145,6 +145,8 @@ To open the `.templ` source instead, run `gopls` through the proxy that this ext
 
 On Linux, the path is `~/.local/share/zed/extensions/work/templ/gopls-templ-proxy.js`, written as an absolute path. Then restart `gopls`, or restart Zed.
 
+**Warning**: This setting applies to every Go project, not only projects with `.templ` files. If the proxy file is missing, `gopls` does not start. This can happen on a new machine with synced settings, or after you remove this extension. To recover, open a `.templ` file so the extension writes the proxy again, or remove the setting.
+
 The proxy needs `node` and `gopls` on your `PATH`. It also checks `$GOBIN`, `$GOPATH/bin`, and `~/go/bin` for `gopls`. To use a specific `gopls`, set `TEMPL_GOPLS_PATH` in `lsp.gopls.binary.env`.
 
 All other `gopls` messages pass through unchanged. The proxy rewrites results of go to definition, declaration, type definition, and implementation:
@@ -179,6 +181,9 @@ npm install --save-dev prettier prettier-plugin-templ-script
 
 ### "Language server templ failed to start" or "LSP not starting"
 **Solution**: Install gopls (see Prerequisites above). The Templ language server requires gopls to be installed.
+
+### "gopls" does not start in Go projects
+**Solution**: If you set `lsp.gopls.binary.path` to the proxy, check that the file exists. See the warning in [Go to Definition from Go Files](#go-to-definition-from-go-files).
 
 ### "No Tailwind CSS autocomplete"
 **Solution**: 

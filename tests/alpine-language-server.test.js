@@ -220,6 +220,79 @@ test("scopes resolve innermost first, then outward", async () => {
   assert.equal(await goTo(`<p x-text="open"`, { delta: 12 }), null);
 });
 
+test("definition follows didChange and didClose", async () => {
+  const uri = "file:///changed.templ";
+  const definitionOfName = async () => {
+    const reply = await request("textDocument/definition", {
+      textDocument: { uri },
+      position: { line: 1, character: 14 },
+    });
+    return reply.result;
+  };
+
+  write({
+    method: "textDocument/didOpen",
+    params: {
+      textDocument: { uri, languageId: "templ", version: 1, text: `templ A() {\n\t<div x-data="missing"></div>\n}\n` },
+    },
+  });
+  assert.equal(await definitionOfName(), null);
+
+  write({
+    method: "textDocument/didChange",
+    params: {
+      textDocument: { uri, version: 2 },
+      contentChanges: [{ text: `templ A() {\n\t<div x-data="block"></div>\n}\n` }],
+    },
+  });
+  assert.equal(target(await definitionOfName())[0].text, "block");
+
+  write({ method: "textDocument/didClose", params: { textDocument: { uri } } });
+  assert.equal(await definitionOfName(), null);
+});
+
+test("an HTML attribute named like a Go keyword is an attribute", () => {
+  const { attributeContext } = require(SERVER);
+  const text = `templ A() {\n\t<div x-data="foo">\n\t\t<label for="e" @click="pick">x</label>\n\t\t<p x-text="pick"></p>\n\t</div>\n}\n`;
+  const onLabel = attributeContext(text, text.indexOf(`@click="pick"`) + 8);
+  assert.equal(onLabel.attribute.name, "@click");
+  assert.deepEqual(onLabel.scopes, ["foo"]);
+  const afterLabel = attributeContext(text, text.indexOf(`x-text="pick"`) + 8);
+  assert.equal(afterLabel.attribute.name, "x-text");
+  assert.deepEqual(afterLabel.scopes, ["foo"]);
+});
+
+test("top-level code outside templ declarations does not open tags", () => {
+  const { attributeContext } = require(SERVER);
+  const component = `templ A() {\n\t<div x-data="foo"><b @click="pick"></b></div>\n}\n`;
+  for (const before of [
+    `script s(n int) {\n\tfor (let i=0;i<n;i++) { f(i) }\n}\n`,
+    `const t = "a<b"\n`,
+    `var a = 1 // the <script> tag\n`,
+    `templ First() {\n\t<p>one</p>\n}\n\nconst t = "a<b"\n`,
+  ]) {
+    const text = before + component;
+    const context = attributeContext(text, text.indexOf(`@click="pick"`) + 8);
+    assert.deepEqual(context?.scopes, ["foo"], before);
+  }
+});
+
+test("a repeat scan within the window reuses the result for the same roots", () => {
+  const { findComponents } = require(SERVER);
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "alpine-scan-"));
+  const script = path.join(directory, "a.js");
+  fs.writeFileSync(script, `Alpine.data("first", () => ({}));\n`);
+  const roots = [directory];
+  try {
+    assert.equal(findComponents(roots)[0].name, "first");
+    fs.writeFileSync(script, `Alpine.data("second", () => ({}));\n`);
+    assert.equal(findComponents(roots)[0].name, "first");
+    assert.equal(findComponents([directory])[0].name, "second");
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("a function body factory hides its local variables", async () => {
   const { factoryObjectStart, objectMembers } = require(SERVER);
   const source = `Alpine.data("b", function () { const hidden = 1; return { open() {} }; });`;

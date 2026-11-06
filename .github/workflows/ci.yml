@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+
+      - name: Test language servers
+        run: node --test tests/
+
+      - name: Check extension
+        run: |
+          rustup target add wasm32-wasip2
+          cargo check --locked --target wasm32-wasip2
+          cargo test --locked
+
+      - name: Check queries against the pinned grammar
+        run: |
+          commit=$(sed -n 's/^commit = "\(.*\)"$/\1/p' extension.toml)
+          git clone https://github.com/vrischmann/tree-sitter-templ grammars/templ
+          git -C grammars/templ checkout "$commit"
+          npm install --global tree-sitter-cli@0.26
+          cd grammars/templ
+          for query in ../../languages/templ/*.scm; do
+            tree-sitter query "$query" ../../examples/*.templ > /dev/null
+          done

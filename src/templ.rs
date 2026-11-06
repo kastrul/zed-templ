@@ -1,4 +1,4 @@
-use std::{env, fs};
+use std::{env, fs, path::Path};
 use zed::settings::LspSettings;
 use zed_extension_api::{self as zed, LanguageServerId, Result};
 
@@ -7,6 +7,23 @@ const ALPINE_SERVER_PATH: &str = "alpine-language-server.js";
 const ALPINE_SERVER_SOURCE: &str = include_str!("alpine-language-server.js");
 const GOPLS_PROXY_PATH: &str = "gopls-templ-proxy.js";
 const GOPLS_PROXY_SOURCE: &str = include_str!("gopls-templ-proxy.js");
+const VERSION_DIR_PREFIX: &str = "templ-";
+
+fn binary_name(platform: zed::Os) -> &'static str {
+    match platform {
+        zed::Os::Windows => "templ.exe",
+        zed::Os::Mac | zed::Os::Linux => "templ",
+    }
+}
+
+/// Finds the binary of an earlier download, for starts where GitHub cannot be reached.
+fn downloaded_binary(directory: &Path, binary: &str) -> Option<String> {
+    fs::read_dir(directory).ok()?.flatten().find_map(|entry| {
+        let name = entry.file_name().into_string().ok()?;
+        (name.starts_with(VERSION_DIR_PREFIX) && entry.path().join(binary).is_file())
+            .then(|| format!("{name}/{binary}"))
+    })
+}
 
 struct TemplExtension {
     cached_binary_path: Option<String>,
@@ -52,19 +69,28 @@ impl TemplExtension {
             return Ok(path);
         }
 
+        let (platform, arch) = zed::current_platform();
+        let binary = binary_name(platform);
+
         zed::set_language_server_installation_status(
             &language_server_id,
             &zed::LanguageServerInstallationStatus::CheckingForUpdate,
         );
-        let release = zed::latest_github_release(
+        let release = match zed::latest_github_release(
             "a-h/templ",
             zed::GithubReleaseOptions {
                 require_assets: true,
                 pre_release: false,
             },
-        )?;
+        ) {
+            Ok(release) => release,
+            Err(error) => {
+                let path = downloaded_binary(Path::new("."), binary).ok_or(error)?;
+                self.cached_binary_path = Some(path.clone());
+                return Ok(path);
+            }
+        };
 
-        let (platform, arch) = zed::current_platform();
         let asset_name = format!(
             "templ_{os}_{arch}.tar.gz",
             os = match platform {
@@ -85,8 +111,8 @@ impl TemplExtension {
             .find(|asset| asset.name == asset_name)
             .ok_or_else(|| format!("no asset found matching {:?}", asset_name))?;
 
-        let version_dir = format!("templ-{}", release.version);
-        let binary_path = format!("{version_dir}/templ");
+        let version_dir = format!("{VERSION_DIR_PREFIX}{}", release.version);
+        let binary_path = format!("{version_dir}/{binary}");
 
         if !fs::metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
             zed::set_language_server_installation_status(
@@ -97,11 +123,7 @@ impl TemplExtension {
             zed::download_file(
                 &asset.download_url,
                 &version_dir,
-                match platform {
-                    zed::Os::Mac | zed::Os::Linux | zed::Os::Windows => {
-                        zed::DownloadedFileType::GzipTar
-                    }
-                },
+                zed::DownloadedFileType::GzipTar,
             )
             .map_err(|e| format!("failed to download file: {e}"))?;
 
@@ -142,12 +164,6 @@ impl zed::Extension for TemplExtension {
 
         Ok(zed::Command {
             command,
-            // Pass the log argument to the language server to debug it
-            // args: vec![
-            //     "lsp".to_string(),
-            //     "-log".to_string(),
-            //     "/tmp/templ.txt".to_string(),
-            // ],
             args: vec!["lsp".to_string()],
             env: Default::default(),
         })
@@ -167,3 +183,30 @@ impl zed::Extension for TemplExtension {
 }
 
 zed::register_extension!(TemplExtension);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn downloaded_binary_finds_only_a_version_directory_with_the_binary() {
+        let directory = env::temp_dir().join(format!("zed-templ-{}", std::process::id()));
+        fs::create_dir_all(directory.join("templ-v1")).unwrap();
+        fs::create_dir_all(directory.join("other")).unwrap();
+        fs::write(directory.join("templ-v1/templ"), "").unwrap();
+        fs::write(directory.join("other/templ.exe"), "").unwrap();
+
+        let found = downloaded_binary(&directory, "templ");
+        let missing = downloaded_binary(&directory, "templ.exe");
+        fs::remove_dir_all(&directory).unwrap();
+
+        assert_eq!(found.as_deref(), Some("templ-v1/templ"));
+        assert_eq!(missing, None);
+    }
+
+    #[test]
+    fn binary_name_has_the_windows_suffix() {
+        assert_eq!(binary_name(zed::Os::Windows), "templ.exe");
+        assert_eq!(binary_name(zed::Os::Linux), "templ");
+    }
+}

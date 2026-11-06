@@ -10,8 +10,6 @@
 (_ "{" "}" @end) @indent
 (_ "(" ")" @end) @indent
 
-(component_block "}" @end) @indent
-
 (tag_start ">" @end) @indent
 (self_closing_tag "/>" @end) @indent
 (void_element ">" @end) @indent
@@ -31,32 +29,3 @@
 (style_element
   (style_tag_start) @start
   (style_tag_end)? @end) @indent
-
-((element
-  (tag_start
-    name: (element_identifier) @_void_element)
-  (tag_end)? @end)
-  (#any-of? @_void_element
-    "area"
-    "base"
-    "basefont"
-    "bgsound"
-    "br"
-    "col"
-    "command"
-    "embed"
-    "frame"
-    "hr"
-    "image"
-    "img"
-    "input"
-    "isindex"
-    "keygen"
-    "link"
-    "menuitem"
-    "meta"
-    "nextid"
-    "param"
-    "source"
-    "track"
-    "wbr")) @indent
