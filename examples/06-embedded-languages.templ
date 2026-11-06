@@ -13,4 +13,8 @@ templ EmbeddedLanguages(themeColor string) {
 	<div class={ "card rounded-lg p-4" }>
 		<p>Embedded CSS and JavaScript should still highlight correctly.</p>
 	</div>
+	<div x-data="counter" x-init="setup">
+		<input x-on:change="pick" x-show="open"/>
+		<button type="button" @click="remove(row)" :aria-label="row.label" x-text="row.label"></button>
+	</div>
 }

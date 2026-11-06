@@ -93,7 +93,7 @@ If Emmet does not expand in `.templ` files:
 ### Alpine.js Support
 Alpine support works without configuration. If you set `languages.Templ.language_servers`, keep `"alpine"` in the list, because Zed disables servers that the list leaves out.
 
-**Highlighting**: Quoted values of Alpine attributes are highlighted as JavaScript. This covers `x-data`, `x-init`, `x-show`, `x-bind`, `x-on`, `x-text`, `x-html`, `x-model`, `x-modelable`, `x-effect`, `x-if`, `x-id`, and the `@` and `:` shorthands. Values of `x-for`, `x-ref`, `x-transition`, `x-teleport`, and `x-cloak` are not highlighted, because they are not plain JavaScript.
+**Highlighting**: Quoted values of Alpine attributes are highlighted as JavaScript. This covers `x-data`, `x-init`, `x-show`, `x-bind`, `x-on`, `x-text`, `x-html`, `x-model`, `x-modelable`, `x-effect`, `x-if`, `x-id`, and the `@` and `:` shorthands. Values of `x-for`, `x-ref`, `x-transition`, `x-teleport`, and `x-cloak` are not highlighted, because they are not plain JavaScript. A value that is one bare name in `x-data`, `x-init`, `x-on`, `x-effect`, or the `@` shorthand, such as `x-on:change="pick"`, is highlighted as a function.
 
 **Go to definition**: The bundled `alpine` language server links markup to `Alpine.data(...)` registrations in your workspace's scripts:
 

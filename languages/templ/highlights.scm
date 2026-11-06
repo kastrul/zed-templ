@@ -161,6 +161,14 @@
 (attribute
   value: (quoted_attribute_value) @string)
 
+; Bare Alpine handler names, which are excluded from JavaScript injection.
+((attribute
+  name: (attribute_name) @_name
+  value: (quoted_attribute_value
+    (attribute_value) @function))
+  (#match? @_name "^(x-(data|init|on|effect)([:.]|$)|@)")
+  (#match? @function "^\\s*[A-Za-z_$][A-Za-z0-9_$]*\\s*$"))
+
 [
   (element_text)
   (style_element_text)

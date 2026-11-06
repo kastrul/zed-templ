@@ -34,5 +34,15 @@
   name: (attribute_name) @_name
   value: (quoted_attribute_value
     (attribute_value) @injection.content))
-  (#match? @_name "^(x-(data|init|show|bind|on|text|html|model|modelable|effect|if|id)([:.]|$)|@|:)")
+  (#match? @_name "^(x-(show|bind|text|html|model|modelable|if|id)([:.]|$)|:)")
+  (#set! injection.language "javascript"))
+
+; A bare name in these attributes is a function reference. highlights.scm
+; captures it, because injected JavaScript would highlight it as a variable.
+((attribute
+  name: (attribute_name) @_name
+  value: (quoted_attribute_value
+    (attribute_value) @injection.content))
+  (#match? @_name "^(x-(data|init|on|effect)([:.]|$)|@)")
+  (#not-match? @injection.content "^\\s*[A-Za-z_$][A-Za-z0-9_$]*\\s*$")
   (#set! injection.language "javascript"))

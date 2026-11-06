@@ -15,7 +15,7 @@ Recommended order:
 - `03-emmet-markup.templ`: try Emmet expansions like `section.hero`, `ul>li*3`, and `div.container>div.row>div.col` with `Tab`.
 - `04-raw-go-blocks.templ`: check whether `{{` stays intact while typing and after save.
 - `05-formatting-blank-lines.templ`: save the file and check whether blank lines are preserved.
-- `06-embedded-languages.templ`: verify embedded CSS, JavaScript, and class expressions still highlight correctly.
+- `06-embedded-languages.templ`: verify embedded CSS, JavaScript, and class expressions still highlight correctly. Bare names in Alpine handler attributes, such as `x-on:change="pick"`, should have function colour, and `x-show="open"` should not.
 - `07-for-loop-with-dynamic-attrs.templ`: verify highlighting stays correct after dynamic attribute key expressions inside a `for` loop.
 - `08-emmet-scope-check.templ`: verify Emmet expands in markup and does not feel like the primary tool inside `<script>` and `<style>`.
 
