@@ -84,3 +84,8 @@
             name: (element_identifier) @name)
     ]
 ) @item
+
+(void_element
+    "<"
+    name: (element_identifier) @name
+) @item

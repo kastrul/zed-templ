@@ -21,7 +21,7 @@ Recommended order:
 
 Current issue mapping:
 
-- `#23`: `02-dynamic-attribute-keys.templ`
+- `#23`: `02-dynamic-attribute-keys.templ`, `07-for-loop-with-dynamic-attrs.templ`
 - `#22`: `03-emmet-markup.templ`
 - `#16`: `04-raw-go-blocks.templ`
 - `#15`: `05-formatting-blank-lines.templ`

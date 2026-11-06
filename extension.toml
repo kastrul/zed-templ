@@ -22,4 +22,4 @@ language = "Templ"
 
 [grammars.templ]
 repository = "https://github.com/vrischmann/tree-sitter-templ"
-commit = "68d6707ed20159ae7525241b8161c126dc1c620c"
+commit = "a9f01903f715432c289065fd608806f53523ec3e"

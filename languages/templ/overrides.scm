@@ -17,6 +17,7 @@
   (tag_start)
   (tag_end)
   (self_closing_tag)
+  (void_element)
   (script_tag_start)
   (script_tag_end)
   (self_closing_script_tag)

@@ -14,6 +14,7 @@
 
 (tag_start ">" @end) @indent
 (self_closing_tag "/>" @end) @indent
+(void_element ">" @end) @indent
 (script_tag_start ">" @end) @indent
 (self_closing_script_tag "/>" @end) @indent
 (style_tag_start ">" @end) @indent

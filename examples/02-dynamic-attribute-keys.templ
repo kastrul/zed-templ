@@ -23,3 +23,8 @@ templ DynamicAttributeKeys(bookID int, symbol string, midLabel string, enabled b
 		<span>{ symbol }</span>
 	</div>
 }
+
+templ DynamicAttributeKeysVoidElement(bookID int, symbol string) {
+	<input { fmt.Sprintf("data-book-%d", bookID) }={ symbol } type="text">
+	<p class="after-void">Highlight below should stay correct.</p>
+}
